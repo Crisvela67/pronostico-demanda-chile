@@ -1,42 +1,53 @@
 {
   "twh_por_anio": {
-    "2018": 77.09,
-    "2019": 77.39,
-    "2020": 77.48,
-    "2021": 81.53,
+    "2018": 77.1,
+    "2019": 77.4,
+    "2020": 77.49,
+    "2021": 81.54,
     "2022": 83.05,
-    "2023": 83.76,
-    "2024": 86.29,
-    "2025": 85.15
+    "2023": 83.77,
+    "2024": 86.3
   },
   "crecimiento_pct": {
     "2019": 0.38,
     "2020": 0.12,
     "2021": 5.23,
-    "2022": 1.86,
-    "2023": 0.86,
-    "2024": 3.03,
-    "2025": -1.32
+    "2022": 1.84,
+    "2023": 0.87,
+    "2024": 3.03
   },
-  "temp_min_consumo_c": 15.6,
-  "corr_lineal": 0.059,
-  "covid_peor_semana": 27,
+  "temp_min_consumo_c": 15.5,
+  "corr_lineal": 0.051,
+  "covid_peor_semana": 32,
   "covid_peor_caida_pct": -5.7,
+  "correlacion_perfil_vs_2018_2024": {
+    "2018": 0.997,
+    "2019": 0.999,
+    "2020": 0.984,
+    "2021": 0.978,
+    "2022": 1.0,
+    "2023": 0.999,
+    "2024": 0.999,
+    "2025": -0.784
+  },
+  "anios_excluidos": [
+    2025
+  ],
   "fuente": "Histórico oficial de generación bruta horaria, Coordinador Eléctrico Nacional",
   "desde": "2018-01-01",
-  "hasta": "2025-12-31",
-  "horas": 70123,
-  "maximo_mwh": 13093.1,
-  "maximo_fecha": "2025-12-29 05:00:00-03:00",
-  "hora_punta_promedio": 12,
+  "hasta": "2024-12-31",
+  "horas": 61362,
+  "maximo_mwh": 12190.5,
+  "maximo_fecha": "2024-01-31 15:00:00-03:00",
+  "hora_punta_promedio": 21,
   "hora_valle_promedio": 4,
-  "finde_vs_habil_pct": -6.9,
+  "finde_vs_habil_pct": -7.0,
   "metricas": {
-    "mape_modelo": 9.297433869642848,
-    "mae_modelo": 417.0670635429319,
-    "mape_baseline_semana": 8.880172153490957,
-    "mape_baseline_dia": 9.844660612753268,
-    "horas_train": 61190,
-    "horas_test": 8760
+    "mape_modelo": 2.2542204376573536,
+    "mae_modelo": 225.75695171056708,
+    "mape_baseline_semana": 3.475855066112736,
+    "mape_baseline_dia": 4.262694176529388,
+    "horas_train": 52430,
+    "horas_test": 8758
   }
 }

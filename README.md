@@ -99,16 +99,17 @@ _Actualizado automáticamente. Fuente: Histórico oficial de generación bruta h
 
 | Indicador | Valor |
 |---|---|
-| Período analizado | 2018-01-01 a 2025-12-31 (70.123 horas) |
-| Máximo horario | 13.093 MWh/h (2025-12-29 05:00) |
-| Hora punta promedio | 12:00 · valle 04:00 |
-| Fin de semana vs día hábil | -6,9 % |
+| Período analizado | 2018-01-01 a 2024-12-31 (61.362 horas) |
+| Máximo horario | 12.190 MWh/h (2024-01-31 15:00) |
+| Hora punta promedio | 21:00 · valle 04:00 |
+| Fin de semana vs día hábil | -7,0 % |
+| Años excluidos por calidad | 2025 (ver hallazgo) |
 | Peor semana de 2020 (pandemia) | -5,7 % vs 2018-2019 |
 | Temperatura de menor consumo | ≈ 16 °C |
-| **Error del modelo (MAPE)** | **9,30 %** |
-| Baseline semana pasada | 8,88 % |
-| Baseline ayer | 9,84 % |
-| Error medio absoluto | 417 MWh/h |
+| **Error del modelo (MAPE)** | **2,25 %** |
+| Baseline semana pasada | 3,48 % |
+| Baseline ayer | 4,26 % |
+| Error medio absoluto | 226 MWh/h |
 
 ![metricas](reports/figures/00_metricas.png)
 
@@ -117,6 +118,8 @@ _Actualizado automáticamente. Fuente: Histórico oficial de generación bruta h
 ![hora_dia](reports/figures/02_hora_vs_dia_semana.png)
 
 ![pronostico](reports/figures/07_pronostico_vs_real.png)
+
+![calidad](reports/figures/11_calidad_perfil_2025.png)
 
 **[Ver el reporte completo con todos los gráficos →](reports/RESULTADOS.md)**
 <!-- RESULTADOS:FIN -->

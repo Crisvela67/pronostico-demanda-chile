@@ -6,16 +6,17 @@
 
 | Indicador | Valor |
 |---|---|
-| Período analizado | 2018-01-01 a 2025-12-31 (70.123 horas) |
-| Máximo horario | 13.093 MWh/h (2025-12-29 05:00) |
-| Hora punta promedio | 12:00 · valle 04:00 |
-| Fin de semana vs día hábil | -6,9 % |
+| Período analizado | 2018-01-01 a 2024-12-31 (61.362 horas) |
+| Máximo horario | 12.190 MWh/h (2024-01-31 15:00) |
+| Hora punta promedio | 21:00 · valle 04:00 |
+| Fin de semana vs día hábil | -7,0 % |
+| Años excluidos por calidad | 2025 (ver hallazgo) |
 | Peor semana de 2020 (pandemia) | -5,7 % vs 2018-2019 |
 | Temperatura de menor consumo | ≈ 16 °C |
-| **Error del modelo (MAPE)** | **9,30 %** |
-| Baseline semana pasada | 8,88 % |
-| Baseline ayer | 9,84 % |
-| Error medio absoluto | 417 MWh/h |
+| **Error del modelo (MAPE)** | **2,25 %** |
+| Baseline semana pasada | 3,48 % |
+| Baseline ayer | 4,26 % |
+| Error medio absoluto | 226 MWh/h |
 
 ## Mapa de calor anual
 
@@ -82,3 +83,9 @@ Pronóstico a 24 horas evaluado sobre datos que el modelo no vio.
 
 
 ![Qué variables importan](figures/10_importancia_variables.png)
+
+## Calidad de datos: el problema de 2025
+
+Al comparar la forma diaria de cada año, la hoja 2025 del archivo oficial aparece desplazada unas 9 horas: la punta cae de madrugada y el valle en la noche, algo incompatible con un sistema con gran aporte solar. Por eso 2025 se excluye del entrenamiento y la evaluación (`excluir_anios` en `config/settings.yaml`). Hay que volver a revisarlo cuando el Coordinador publique una nueva versión del archivo.
+
+![Calidad de datos: el problema de 2025](figures/11_calidad_perfil_2025.png)
