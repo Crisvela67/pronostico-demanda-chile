@@ -177,6 +177,11 @@ def main(argv=None) -> int:
         pronosticar()
     elif a.paso == "diario":
         ingesta(a.dias)
+        p = _rutas()
+        if not (p["api"].exists() or p["xls"].exists()):
+            print("Aún no hay datos de demanda (falta SIP_USER_KEY o archivos XLS). "
+                  "Nada que entrenar; termino sin error.")
+            return 0
         ok = paso_validar()
         entrenar()
         pronosticar()
