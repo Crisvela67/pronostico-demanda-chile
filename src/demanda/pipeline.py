@@ -81,26 +81,25 @@ def historico(forzar: bool = False, con_clima: bool = True) -> None:
               f"(ver data/validation/calidad_cen_historico.csv):")
         print(rep.head(10).to_string(index=False))
 
-    cubre = False
-    if p["clima"].exists():
-        cl = pd.read_parquet(p["clima"])
-        cubre = len(cl) and cl["fecha_hora_utc"].min() <= ini + pd.Timedelta(days=1)
-    if con_clima and not cubre:
-        partes = []
-        for anio in range(ini.year, fin.year + 1):
-            desde = max(date(anio, 1, 1), ini.date())
-            hasta = min(date(anio, 12, 31), fin.date())
-            try:
-                partes.append(clima.descargar(desde, hasta))
-            except Exception as e:
-                print(f"Clima {anio} omitido: {e}")
-        if partes:
-            nuevo = pd.concat(partes)
-            if p["clima"].exists():
-                nuevo = pd.concat([nuevo, pd.read_parquet(p["clima"])])
-            nuevo.drop_duplicates("fecha_hora_utc").sort_values("fecha_hora_utc").to_parquet(
-                p["clima"], index=False)
-            print("Clima histórico OK")
+    if not con_clima:
+        return
+    previo = pd.read_parquet(p["clima"]) if p["clima"].exists() else None
+    horas_por_anio = (previo["fecha_hora_utc"].dt.year.value_counts() if previo is not None
+                      else pd.Series(dtype=int))
+    faltantes = [a for a in range(ini.year, fin.year + 1) if horas_por_anio.get(a, 0) < 24 * 300]
+    partes = []
+    for anio in faltantes:
+        desde = max(date(anio, 1, 1), ini.date())
+        hasta = min(date(anio, 12, 31), fin.date())
+        try:
+            partes.append(clima.descargar(desde, hasta))
+            print(f"Clima {anio} OK")
+        except Exception as e:
+            print(f"Clima {anio} omitido: {e}")
+    if partes:
+        nuevo = pd.concat(partes + ([previo] if previo is not None else []))
+        nuevo.drop_duplicates("fecha_hora_utc").sort_values("fecha_hora_utc").to_parquet(
+            p["clima"], index=False)
 
 
 def paso_validar() -> bool:

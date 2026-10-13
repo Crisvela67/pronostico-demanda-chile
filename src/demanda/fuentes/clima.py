@@ -26,8 +26,17 @@ def _ciudad(lat: float, lon: float, desde: date, hasta: date) -> pd.DataFrame:
         "hourly": "temperature_2m",
         "timezone": "UTC",
     }
-    r = requests.get(URL_ARCHIVO, params=params, timeout=60)
-    r.raise_for_status()
+    import time
+
+    for intento in range(4):  # el archivo de Open-Meteo a veces tarda; reintenta con espera
+        try:
+            r = requests.get(URL_ARCHIVO, params=params, timeout=120)
+            r.raise_for_status()
+            break
+        except requests.RequestException:
+            if intento == 3:
+                raise
+            time.sleep(10 * (intento + 1))
     h = r.json()["hourly"]
     return pd.DataFrame(
         {"fecha_hora_utc": pd.to_datetime(h["time"], utc=True), "temp_c": h["temperature_2m"]}
