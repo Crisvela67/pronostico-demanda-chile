@@ -95,7 +95,30 @@ Además se detecta si las series calzan mejor **corridas N horas**, lo que casi 
 ## Resultados
 
 <!-- RESULTADOS:INICIO -->
-_Se completa automáticamente al correr el pipeline._
+_Actualizado automáticamente. Fuente: Histórico oficial de generación bruta horaria, Coordinador Eléctrico Nacional._
+
+| Indicador | Valor |
+|---|---|
+| Período analizado | 2018-01-01 a 2025-12-31 (70.123 horas) |
+| Máximo horario | 13.093 MWh/h (2025-12-29 05:00) |
+| Hora punta promedio | 12:00 · valle 04:00 |
+| Fin de semana vs día hábil | -6,9 % |
+| Peor semana de 2020 (pandemia) | -5,7 % vs 2018-2019 |
+| Temperatura de menor consumo | ≈ 16 °C |
+| **Error del modelo (MAPE)** | **9,30 %** |
+| Baseline semana pasada | 8,88 % |
+| Baseline ayer | 9,84 % |
+| Error medio absoluto | 417 MWh/h |
+
+![metricas](reports/figures/00_metricas.png)
+
+![huella](reports/figures/01_huella_calendario.png)
+
+![hora_dia](reports/figures/02_hora_vs_dia_semana.png)
+
+![pronostico](reports/figures/07_pronostico_vs_real.png)
+
+**[Ver el reporte completo con todos los gráficos →](reports/RESULTADOS.md)**
 <!-- RESULTADOS:FIN -->
 
 ## Decisiones de diseño

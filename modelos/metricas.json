@@ -1,0 +1,8 @@
+{
+  "mape_modelo": 9.297433869642848,
+  "mae_modelo": 417.0670635429319,
+  "mape_baseline_semana": 8.880172153490957,
+  "mape_baseline_dia": 9.844660612753268,
+  "horas_train": 61190,
+  "horas_test": 8760
+}

@@ -1,0 +1,42 @@
+{
+  "twh_por_anio": {
+    "2018": 77.09,
+    "2019": 77.39,
+    "2020": 77.48,
+    "2021": 81.53,
+    "2022": 83.05,
+    "2023": 83.76,
+    "2024": 86.29,
+    "2025": 85.15
+  },
+  "crecimiento_pct": {
+    "2019": 0.38,
+    "2020": 0.12,
+    "2021": 5.23,
+    "2022": 1.86,
+    "2023": 0.86,
+    "2024": 3.03,
+    "2025": -1.32
+  },
+  "temp_min_consumo_c": 15.6,
+  "corr_lineal": 0.059,
+  "covid_peor_semana": 27,
+  "covid_peor_caida_pct": -5.7,
+  "fuente": "Histórico oficial de generación bruta horaria, Coordinador Eléctrico Nacional",
+  "desde": "2018-01-01",
+  "hasta": "2025-12-31",
+  "horas": 70123,
+  "maximo_mwh": 13093.1,
+  "maximo_fecha": "2025-12-29 05:00:00-03:00",
+  "hora_punta_promedio": 12,
+  "hora_valle_promedio": 4,
+  "finde_vs_habil_pct": -6.9,
+  "metricas": {
+    "mape_modelo": 9.297433869642848,
+    "mae_modelo": 417.0670635429319,
+    "mape_baseline_semana": 8.880172153490957,
+    "mape_baseline_dia": 9.844660612753268,
+    "horas_train": 61190,
+    "horas_test": 8760
+  }
+}
