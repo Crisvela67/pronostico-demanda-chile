@@ -1,0 +1,54 @@
+zona_horaria: America/Santiago
+
+rutas:
+  raw: data/raw
+  processed: data/processed
+  validation: data/validation
+  modelos: modelos
+  xls_entrada: data/raw/xls
+
+api_sip:
+  base_url: https://sipub.api.coordinador.cl/sipub/api/v2
+  endpoint_demanda: demanda_sistema_real
+  # Verifica estos nombres con la documentación vigente del Coordinador
+  # cuando tengas tu user_key; se dejan configurables por eso.
+  param_fecha_inicio: fecha__gte
+  param_fecha_fin: fecha__lte
+  campo_fecha: fecha
+  campo_hora: hora
+  campo_demanda: demanda
+  convencion_hora: "1-24"   # "1-24" (hora que termina) o "0-23"
+  timeout_s: 60
+
+xls:
+  # Ajustar al formato real del archivo descargado
+  hoja: 0
+  fila_encabezado: 0
+  columna_fecha: Fecha
+  formato: ancho            # "ancho" (horas como columnas) o "largo"
+  columna_hora: Hora        # solo para formato largo
+  columna_demanda: Demanda  # solo para formato largo
+  convencion_hora: "1-24"
+  decimal: ","
+
+clima:
+  # Open-Meteo: gratuito y sin API key. Ciudades ponderan la demanda nacional.
+  ciudades:
+    santiago:     {lat: -33.45, lon: -70.66, peso: 0.6}
+    antofagasta:  {lat: -23.65, lon: -70.40, peso: 0.25}
+    concepcion:   {lat: -36.83, lon: -73.05, peso: 0.15}
+  base_calefaccion_c: 18
+  base_enfriamiento_c: 24
+
+validacion:
+  tolerancia_pct: 0.5      # diferencia % aceptada por hora
+  max_alertas: 0           # sobre este número el pipeline falla
+  dias_rezago: 3           # compara días ya consolidados
+
+modelo:
+  horizonte_h: 24
+  dias_test: 60
+  lightgbm:
+    n_estimators: 600
+    learning_rate: 0.05
+    num_leaves: 63

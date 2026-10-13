@@ -1,0 +1,40 @@
+name: Pipeline diario
+
+on:
+  schedule:
+    - cron: "17 11 * * *"   # 08:17 en Chile (UTC-3); minuto no redondo para evitar colas
+  workflow_dispatch:         # botón "Run workflow" para correrlo a mano
+
+permissions:
+  contents: write            # para commitear los datos actualizados
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -e .
+
+      - name: Tests
+        run: pytest -q
+
+      - name: Ingesta, validación, entrenamiento y pronóstico
+        env:
+          SIP_USER_KEY: ${{ secrets.SIP_USER_KEY }}
+        run: python -m demanda.pipeline diario --dias 7
+
+      - name: Guardar resultados en el repo
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f data/processed/*.parquet data/validation/*.json modelos/metricas.json || true
+          git diff --cached --quiet || git commit -m "Actualización diaria de datos y pronóstico"
+          git push
