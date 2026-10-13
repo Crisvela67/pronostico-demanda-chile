@@ -7,6 +7,7 @@ Uso:
     python -m demanda.pipeline validar
     python -m demanda.pipeline entrenar
     python -m demanda.pipeline pronosticar
+    python -m demanda.pipeline reporte              # gráficos, mapas de calor y README
     python -m demanda.pipeline diario               # todo lo anterior en orden
 """
 from __future__ import annotations
@@ -133,11 +134,12 @@ def _clima():
     return pd.read_parquet(p["clima"]) if p["clima"].exists() else None
 
 
-def entrenar() -> dict:
+def entrenar(dias_test: int | None = None) -> dict:
     cfg = settings()
     c = settings()["clima"]
     df = features.construir(_serie_demanda(), _clima(), c["base_calefaccion_c"], c["base_enfriamiento_c"])
-    m, cols, metricas, test = modelo.entrenar(df, cfg["modelo"]["lightgbm"], cfg["modelo"]["dias_test"])
+    m, cols, metricas, test = modelo.entrenar(df, cfg["modelo"]["lightgbm"],
+                                               dias_test or cfg["modelo"]["dias_test"])
     modelo.guardar(m, cols, metricas, _rutas()["modelos"])
     test.to_parquet(_rutas()["test"], index=False)
     print(json.dumps(metricas, indent=2))
@@ -151,6 +153,25 @@ def pronosticar() -> pd.DataFrame:
     pron.to_parquet(_rutas()["pronostico"], index=False)
     print(pron.head(24).to_string(index=False))
     return pron
+
+
+def reporte() -> dict:
+    import joblib
+
+    from demanda import reporte as rep
+
+    p = _rutas()
+    fuente = ("Histórico oficial de generación bruta horaria, Coordinador Eléctrico Nacional"
+              if p["cen"].exists() else "datos sintéticos de demostración (no reales)")
+    demanda = _serie_demanda()
+    test = pd.read_parquet(p["test"]) if p["test"].exists() else None
+    met_path = p["modelos"] / "metricas.json"
+    metricas = json.loads(met_path.read_text()) if met_path.exists() else None
+    mod_path = p["modelos"] / "modelo.joblib"
+    paquete = joblib.load(mod_path) if mod_path.exists() else None
+    info = rep.generar(demanda, _clima(), test, metricas, paquete, fuente)
+    print(f"Reporte generado: reports/RESULTADOS.md ({len(list(rep.FIG.glob('*.png')))} gráficos)")
+    return info
 
 
 def demo(dias: int = 400, semilla: int = 7) -> None:
@@ -191,7 +212,7 @@ def demo(dias: int = 400, semilla: int = 7) -> None:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("paso", choices=["demo", "historico", "ingesta", "validar", "entrenar",
-                                     "pronosticar", "diario"])
+                                     "pronosticar", "reporte", "diario"])
     ap.add_argument("--dias", type=int, default=7, help="días hacia atrás para la ingesta")
     ap.add_argument("--forzar", action="store_true", help="vuelve a descargar el histórico")
     a = ap.parse_args(argv)
@@ -199,8 +220,9 @@ def main(argv=None) -> int:
     if a.paso == "demo":
         demo()
         paso_validar()  # en demo las alertas son esperadas (errores inyectados)
-        entrenar()
+        entrenar(dias_test=60)
         pronosticar()
+        reporte()
         return 0
     if a.paso == "ingesta":
         ingesta(a.dias)
@@ -210,6 +232,8 @@ def main(argv=None) -> int:
         entrenar()
     elif a.paso == "pronosticar":
         pronosticar()
+    elif a.paso == "reporte":
+        reporte()
     elif a.paso == "historico":
         historico(forzar=a.forzar)
     elif a.paso == "diario":
@@ -226,6 +250,7 @@ def main(argv=None) -> int:
         ok = paso_validar()
         entrenar()
         pronosticar()
+        reporte()
         return 0 if ok else 1
     return 0
 

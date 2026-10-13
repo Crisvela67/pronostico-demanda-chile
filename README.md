@@ -92,15 +92,11 @@ Para cada hora cubierta por ambas fuentes se calcula la diferencia absoluta y po
 
 Además se detecta si las series calzan mejor **corridas N horas**, lo que casi siempre indica un problema de convención (hora 1–24 vs 0–23) o de zona horaria, no un error real. Solo se comparan días con más de `dias_rezago` de antigüedad, porque la demanda real se corrige después de publicada.
 
-## Resultados de prueba (datos sintéticos, no reales)
+## Resultados
 
-| Modelo | MAPE |
-|---|---|
-| Baseline: mismo día de la semana pasada | 1,64 % |
-| Baseline: ayer a la misma hora | 3,42 % |
-| **LightGBM** | **1,42 %** |
-
-Estos números solo prueban que el pipeline funciona. Se reemplazarán por los resultados sobre el histórico oficial.
+<!-- RESULTADOS:INICIO -->
+_Se completa automáticamente al correr el pipeline._
+<!-- RESULTADOS:FIN -->
 
 ## Decisiones de diseño
 

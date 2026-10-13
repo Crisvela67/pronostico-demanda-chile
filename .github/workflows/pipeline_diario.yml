@@ -4,6 +4,13 @@ on:
   schedule:
     - cron: "17 11 * * *"   # 08:17 en Chile (UTC-3); minuto no redondo para evitar colas
   workflow_dispatch:         # botón "Run workflow" para correrlo a mano
+  push:                      # también al subir cambios de código (no de datos)
+    branches: [main]
+    paths: ["src/**", "config/**", "app/**", "pyproject.toml", ".github/workflows/**"]
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
 
 permissions:
   contents: write            # para commitear los datos actualizados
@@ -35,6 +42,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f data/processed/*.parquet data/validation/*.json modelos/metricas.json || true
-          git diff --cached --quiet || git commit -m "Actualización diaria de datos y pronóstico"
-          git push
+          git add -f data/processed/*.parquet modelos/metricas.json || true
+          git add -f data/validation/*.json data/validation/calidad_cen_historico.csv || true
+          git add reports README.md || true
+          git diff --cached --quiet || git commit -m "Actualización de datos, modelo y reporte"
+          git pull --rebase origin main && git push

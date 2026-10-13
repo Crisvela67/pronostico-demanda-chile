@@ -52,7 +52,7 @@ validacion:
 
 modelo:
   horizonte_h: 24
-  dias_test: 60
+  dias_test: 365          # se evalúa sobre el último año completo
   lightgbm:
     n_estimators: 600
     learning_rate: 0.05
