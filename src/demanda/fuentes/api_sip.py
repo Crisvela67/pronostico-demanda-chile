@@ -30,15 +30,24 @@ def _pedir_paginas(url: str, params: dict, timeout: int) -> list[dict]:
 
 
 def descargar(desde: date, hasta: date, guardar_raw: bool = True) -> pd.DataFrame:
+    """Consulta día por día (la API filtra por una sola fecha).
+
+    El token trae por defecto 60 consultas por hora; cada día puede usar
+    más de una si la respuesta viene paginada. Para cargas históricas
+    largas conviene usar los XLS o pedir al Coordinador un límite mayor.
+    """
+    from datetime import timedelta
+
     cfg = settings()
     c = cfg["api_sip"]
-    params = {
-        "user_key": secreto("SIP_USER_KEY"),
-        c["param_fecha_inicio"]: desde.isoformat(),
-        c["param_fecha_fin"]: hasta.isoformat(),
-    }
+    key = secreto("SIP_USER_KEY")
     url = f"{c['base_url']}/{c['endpoint_demanda']}/"
-    filas = _pedir_paginas(url, params, c["timeout_s"])
+    filas: list[dict] = []
+    dia = desde
+    while dia <= hasta:
+        params = {"user_key": key, c["param_fecha"]: dia.isoformat()}
+        filas.extend(_pedir_paginas(url, params, c["timeout_s"]))
+        dia += timedelta(days=1)
 
     if guardar_raw:
         destino = cfg["rutas"]["raw"] / "api" / f"demanda_{desde}_{hasta}.json"

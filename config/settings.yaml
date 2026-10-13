@@ -9,11 +9,10 @@ rutas:
 
 api_sip:
   base_url: https://sipub.api.coordinador.cl/sipub/api/v2
-  endpoint_demanda: demanda_sistema_real
-  # Verifica estos nombres con la documentación vigente del Coordinador
-  # cuando tengas tu user_key; se dejan configurables por eso.
-  param_fecha_inicio: fecha__gte
-  param_fecha_fin: fecha__lte
+  # Según la documentación pública de la API SIP (v1.1, 2019). Confirmar con la vigente.
+  endpoint_demanda: recursos/demanda_sistema_real
+  param_fecha: fecha          # la API filtra por UN día; se consulta día a día
+  limite_por_hora: 60         # límite por defecto del token
   campo_fecha: fecha
   campo_hora: hora
   campo_demanda: demanda
