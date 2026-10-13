@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Pronóstico demanda eléctrica Chile",
+    "description": "Consultas a las fuentes de datos del proyecto. Define la variable sip_user_key en un Environment de Postman (no la guardes en la colección).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "fecha", "value": "2025-09-01"},
+    {"key": "sip_base", "value": "https://sipub.api.coordinador.cl/sipub/api/v2"}
+  ],
+  "item": [
+    {
+      "name": "1. Coordinador - Histórico generación horaria (XLSX, sin key)",
+      "request": {
+        "method": "HEAD",
+        "header": [
+          {"key": "Referer", "value": "https://www.coordinador.cl/reportes-y-estadisticas/"}
+        ],
+        "url": "https://www.coordinador.cl/wp-content/uploads/2026/05/CEN-hist_gen_de_energia_por_hora_26.xlsx",
+        "description": "HEAD muestra tamaño y fecha de modificación sin descargar. Cambia a GET y usa 'Send and Download' para bajar el archivo (~8,5 MB)."
+      }
+    },
+    {
+      "name": "2. Coordinador - API SIP demanda real (requiere user_key)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{sip_base}}/recursos/demanda_sistema_real/?user_key={{sip_user_key}}&fecha={{fecha}}",
+          "host": ["{{sip_base}}"],
+          "path": ["recursos", "demanda_sistema_real", ""],
+          "query": [
+            {"key": "user_key", "value": "{{sip_user_key}}"},
+            {"key": "fecha", "value": "{{fecha}}"}
+          ]
+        },
+        "description": "Según la documentación SIP v1.1. Si responde 404, prueba la variante sin /recursos/ (siguiente consulta)."
+      }
+    },
+    {
+      "name": "3. Coordinador - API SIP demanda real, ruta alternativa",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{sip_base}}/demanda_sistema_real/?user_key={{sip_user_key}}&fecha={{fecha}}",
+          "host": ["{{sip_base}}"],
+          "path": ["demanda_sistema_real", ""],
+          "query": [
+            {"key": "user_key", "value": "{{sip_user_key}}"},
+            {"key": "fecha", "value": "{{fecha}}"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Open-Meteo - Temperatura horaria histórica Santiago (sin key)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "https://archive-api.open-meteo.com/v1/archive?latitude=-33.45&longitude=-70.66&start_date={{fecha}}&end_date={{fecha}}&hourly=temperature_2m&timezone=UTC",
+          "protocol": "https",
+          "host": ["archive-api", "open-meteo", "com"],
+          "path": ["v1", "archive"],
+          "query": [
+            {"key": "latitude", "value": "-33.45"},
+            {"key": "longitude", "value": "-70.66"},
+            {"key": "start_date", "value": "{{fecha}}"},
+            {"key": "end_date", "value": "{{fecha}}"},
+            {"key": "hourly", "value": "temperature_2m"},
+            {"key": "timezone", "value": "UTC"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Nager.Date - Feriados de Chile (sin key)",
+      "request": {
+        "method": "GET",
+        "url": "https://date.nager.at/api/v3/PublicHolidays/2026/CL"
+      }
+    }
+  ]
+}
