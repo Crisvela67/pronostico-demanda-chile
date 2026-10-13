@@ -2,6 +2,7 @@
 
 Uso:
     python -m demanda.pipeline demo                 # datos sintéticos, sin keys
+    python -m demanda.pipeline historico            # histórico oficial CEN 2018-2025 + clima
     python -m demanda.pipeline ingesta --dias 7     # API + XLS + clima
     python -m demanda.pipeline validar
     python -m demanda.pipeline entrenar
@@ -27,6 +28,7 @@ def _rutas():
     return {
         "api": r["processed"] / "demanda_api.parquet",
         "xls": r["processed"] / "demanda_xls.parquet",
+        "cen": r["processed"] / "demanda_cen_historico.parquet",
         "clima": r["processed"] / "clima.parquet",
         "validacion": r["validation"],
         "modelos": r["modelos"],
@@ -60,6 +62,37 @@ def ingesta(dias: int) -> None:
         print(f"Clima omitido: {e}")
 
 
+def historico(forzar: bool = False, con_clima: bool = True) -> None:
+    """Descarga y procesa el histórico oficial de generación horaria del Coordinador."""
+    from demanda.fuentes import cen_historico, clima
+
+    p = _rutas()
+    ruta = cen_historico.descargar(forzar=forzar)
+    df = cen_historico.leer(ruta)
+    df.to_parquet(p["cen"], index=False)
+    rep = cen_historico.reporte_calidad(df)
+    rep.to_csv(p["validacion"] / "calidad_cen_historico.csv", index=False)
+    ini, fin = df["fecha_hora_utc"].min(), df["fecha_hora_utc"].max()
+    print(f"Histórico CEN: {len(df)} horas, {ini:%Y-%m-%d} a {fin:%Y-%m-%d}")
+    if len(rep):
+        print(f"Ojo: {len(rep)} días con filas distintas a las esperadas "
+              f"(ver data/validation/calidad_cen_historico.csv):")
+        print(rep.head(10).to_string(index=False))
+
+    if con_clima and not p["clima"].exists():
+        partes = []
+        for anio in range(ini.year, fin.year + 1):
+            desde = max(date(anio, 1, 1), ini.date())
+            hasta = min(date(anio, 12, 31), fin.date())
+            try:
+                partes.append(clima.descargar(desde, hasta))
+            except Exception as e:
+                print(f"Clima {anio} omitido: {e}")
+        if partes:
+            pd.concat(partes).drop_duplicates("fecha_hora_utc").to_parquet(p["clima"], index=False)
+            print("Clima histórico OK")
+
+
 def paso_validar() -> bool:
     p, cfg = _rutas(), settings()["validacion"]
     if not (p["api"].exists() and p["xls"].exists()):
@@ -87,9 +120,9 @@ def paso_validar() -> bool:
 
 
 def _serie_demanda() -> pd.DataFrame:
-    """API como fuente principal; XLS rellena las horas que falten."""
+    """Prioridad: API > XLS manual > histórico CEN (rellena lo que falte)."""
     p = _rutas()
-    partes = [pd.read_parquet(p[k]) for k in ("api", "xls") if p[k].exists()]
+    partes = [pd.read_parquet(p[k]) for k in ("api", "xls", "cen") if p[k].exists()]
     if not partes:
         raise SystemExit("No hay datos de demanda. Corre 'ingesta' o 'demo' primero.")
     return pd.concat(partes).drop_duplicates("fecha_hora_utc", keep="first")
@@ -147,7 +180,7 @@ def demo(dias: int = 400, semilla: int = 7) -> None:
     xls.loc[idx, "demanda_mwh"] *= 1.04  # errores inyectados
 
     p = _rutas()
-    for k in ("api", "xls", "clima"):
+    for k in ("api", "xls", "cen", "clima"):
         p[k].unlink(missing_ok=True)
     normalizar.guardar(normalizar.esquema_comun(api, "api"), p["api"])
     normalizar.guardar(normalizar.esquema_comun(xls, "xls"), p["xls"])
@@ -157,8 +190,10 @@ def demo(dias: int = 400, semilla: int = 7) -> None:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("paso", choices=["demo", "ingesta", "validar", "entrenar", "pronosticar", "diario"])
+    ap.add_argument("paso", choices=["demo", "historico", "ingesta", "validar", "entrenar",
+                                     "pronosticar", "diario"])
     ap.add_argument("--dias", type=int, default=7, help="días hacia atrás para la ingesta")
+    ap.add_argument("--forzar", action="store_true", help="vuelve a descargar el histórico")
     a = ap.parse_args(argv)
 
     if a.paso == "demo":
@@ -175,10 +210,16 @@ def main(argv=None) -> int:
         entrenar()
     elif a.paso == "pronosticar":
         pronosticar()
+    elif a.paso == "historico":
+        historico(forzar=a.forzar)
     elif a.paso == "diario":
+        try:
+            historico()  # usa la copia local si tiene menos de 30 días
+        except Exception as e:
+            print(f"Histórico CEN omitido: {e}")
         ingesta(a.dias)
         p = _rutas()
-        if not (p["api"].exists() or p["xls"].exists()):
+        if not any(p[k].exists() for k in ("api", "xls", "cen")):
             print("Aún no hay datos de demanda (falta SIP_USER_KEY o archivos XLS). "
                   "Nada que entrenar; termino sin error.")
             return 0

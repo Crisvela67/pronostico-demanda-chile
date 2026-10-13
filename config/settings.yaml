@@ -19,6 +19,12 @@ api_sip:
   convencion_hora: "1-24"   # "1-24" (hora que termina) o "0-23"
   timeout_s: 60
 
+cen_historico:
+  # Generación bruta horaria oficial, sin key. Publicado en coordinador.cl > Reportes y Estadísticas.
+  # Cuando el Coordinador publique una versión nueva, actualiza esta URL.
+  url: https://www.coordinador.cl/wp-content/uploads/2026/05/CEN-hist_gen_de_energia_por_hora_26.xlsx
+  desde_anio: 2018          # SEN unificado desde nov-2017
+
 xls:
   # Ajustar al formato real del archivo descargado
   hoja: 0
