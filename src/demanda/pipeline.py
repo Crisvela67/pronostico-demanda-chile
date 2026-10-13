@@ -70,8 +70,9 @@ def historico(forzar: bool = False, con_clima: bool = True) -> None:
     p = _rutas()
     ruta = cen_historico.descargar(forzar=forzar)
     df = cen_historico.leer(ruta)
-    df.to_parquet(p["cen"], index=False)
     rep = cen_historico.reporte_calidad(df)
+    df.attrs = {}  # Parquet no admite metadatos que no sean JSON
+    df.to_parquet(p["cen"], index=False)
     rep.to_csv(p["validacion"] / "calidad_cen_historico.csv", index=False)
     ini, fin = df["fecha_hora_utc"].min(), df["fecha_hora_utc"].max()
     print(f"Histórico CEN: {len(df)} horas, {ini:%Y-%m-%d} a {fin:%Y-%m-%d}")
@@ -80,7 +81,11 @@ def historico(forzar: bool = False, con_clima: bool = True) -> None:
               f"(ver data/validation/calidad_cen_historico.csv):")
         print(rep.head(10).to_string(index=False))
 
-    if con_clima and not p["clima"].exists():
+    cubre = False
+    if p["clima"].exists():
+        cl = pd.read_parquet(p["clima"])
+        cubre = len(cl) and cl["fecha_hora_utc"].min() <= ini + pd.Timedelta(days=1)
+    if con_clima and not cubre:
         partes = []
         for anio in range(ini.year, fin.year + 1):
             desde = max(date(anio, 1, 1), ini.date())
@@ -90,7 +95,11 @@ def historico(forzar: bool = False, con_clima: bool = True) -> None:
             except Exception as e:
                 print(f"Clima {anio} omitido: {e}")
         if partes:
-            pd.concat(partes).drop_duplicates("fecha_hora_utc").to_parquet(p["clima"], index=False)
+            nuevo = pd.concat(partes)
+            if p["clima"].exists():
+                nuevo = pd.concat([nuevo, pd.read_parquet(p["clima"])])
+            nuevo.drop_duplicates("fecha_hora_utc").sort_values("fecha_hora_utc").to_parquet(
+                p["clima"], index=False)
             print("Clima histórico OK")
 
 
