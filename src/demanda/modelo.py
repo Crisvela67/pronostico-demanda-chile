@@ -17,12 +17,14 @@ from demanda.features import columnas_modelo
 
 def mape(real, pred) -> float:
     real, pred = np.asarray(real, float), np.asarray(pred, float)
-    m = real != 0
+    m = (real != 0) & ~np.isnan(real) & ~np.isnan(pred)
     return float(np.mean(np.abs((real[m] - pred[m]) / real[m])) * 100)
 
 
 def mae(real, pred) -> float:
-    return float(np.mean(np.abs(np.asarray(real, float) - np.asarray(pred, float))))
+    real, pred = np.asarray(real, float), np.asarray(pred, float)
+    m = ~np.isnan(real) & ~np.isnan(pred)
+    return float(np.mean(np.abs(real[m] - pred[m])))
 
 
 def separar(df: pd.DataFrame, dias_test: int):

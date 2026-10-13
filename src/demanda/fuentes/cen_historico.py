@@ -16,7 +16,8 @@ Formato observado en el archivo (verificado en octubre de 2026):
 - 2017-2024: fecha, dia, hora, SEN.  2025: fecha, hora, SEN (sin "dia").
 - Hora local 1..24; el día del cambio a horario de invierno trae una hora 25.
 - En 2025 la hora 24 viene codificada como 0.
-- Según el año, el día del cambio a horario de verano trae 23 o 24 filas.
+- Según el año, el día del cambio a horario de verano trae 23 o 24 filas; cuando trae 24,
+  la hora inexistente viene en 0 y se descarta.
 
 Por esas inconsistencias NO se interpreta la etiqueta de hora: dentro de cada fecha
 se usa el orden de las filas. La fila k de un día empieza k horas después de la
@@ -76,7 +77,10 @@ def _leer_hoja(df: pd.DataFrame) -> pd.DataFrame:
     else:
         raise ValueError(f"Columnas inesperadas: {list(df.columns)}")
     out = pd.DataFrame({"fecha": _a_fecha(df["FECHA"]).dt.normalize(), "demanda_mwh": valor})
-    out = out.dropna(subset=["fecha"]).reset_index(drop=True)
+    # El día del cambio a horario de verano algunos años traen 24 filas con un 0 en la hora
+    # que no existe: se descarta antes de ordenar (un SEN en 0 MWh no es un dato real).
+    out = out.dropna(subset=["fecha", "demanda_mwh"])
+    out = out[out["demanda_mwh"] > 0].reset_index(drop=True)
     out["pos"] = out.groupby("fecha").cumcount()  # orden de las filas dentro del día
     return out
 

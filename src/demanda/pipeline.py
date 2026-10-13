@@ -128,10 +128,21 @@ def paso_validar() -> bool:
     return res.resumen["alertas"] <= cfg["max_alertas"]
 
 
-def _serie_demanda() -> pd.DataFrame:
+def _excluir_anios(df: pd.DataFrame) -> pd.DataFrame:
+    excl = set(settings().get("cen_historico", {}).get("excluir_anios") or [])
+    if not excl:
+        return df
+    anio = df["fecha_hora_utc"].dt.tz_convert("America/Santiago").dt.year
+    return df[~anio.isin(excl)]
+
+
+def _serie_demanda(incluir_excluidos: bool = False) -> pd.DataFrame:
     """Prioridad: API > XLS manual > histórico CEN (rellena lo que falte)."""
     p = _rutas()
-    partes = [pd.read_parquet(p[k]) for k in ("api", "xls", "cen") if p[k].exists()]
+    partes = [pd.read_parquet(p[k]) for k in ("api", "xls") if p[k].exists()]
+    if p["cen"].exists():
+        cen = pd.read_parquet(p["cen"])
+        partes.append(cen if incluir_excluidos else _excluir_anios(cen))
     if not partes:
         raise SystemExit("No hay datos de demanda. Corre 'ingesta' o 'demo' primero.")
     return pd.concat(partes).drop_duplicates("fecha_hora_utc", keep="first")
@@ -177,7 +188,10 @@ def reporte() -> dict:
     metricas = json.loads(met_path.read_text()) if met_path.exists() else None
     mod_path = p["modelos"] / "modelo.joblib"
     paquete = joblib.load(mod_path) if mod_path.exists() else None
-    info = rep.generar(demanda, _clima(), test, metricas, paquete, fuente)
+    completo = _serie_demanda(incluir_excluidos=True) if p["cen"].exists() else None
+    excluidos = settings().get("cen_historico", {}).get("excluir_anios") or []
+    info = rep.generar(demanda, _clima(), test, metricas, paquete, fuente,
+                       completo=completo, excluidos=excluidos)
     print(f"Reporte generado: reports/RESULTADOS.md ({len(list(rep.FIG.glob('*.png')))} gráficos)")
     return info
 

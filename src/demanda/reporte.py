@@ -200,11 +200,47 @@ def fig_covid(d) -> tuple[str | None, dict]:
                                                  "covid_peor_caida_pct": round(float(var.min()), 1)}
 
 
+def fig_calidad(completo: pd.DataFrame, excluidos: list[int]) -> tuple[str | None, dict]:
+    """Perfil horario promedio por año: contexto en gris, años excluidos destacados."""
+    if completo is None or not excluidos:
+        return None, {}
+    c = _local(completo)
+    perfil = c.pivot_table(index="hora", columns="anio", values="demanda_mwh", aggfunc="mean")
+    perfil = perfil / perfil.mean() * 100  # índice: 100 = promedio del año
+    fig, ax = plt.subplots(figsize=(11, 5))
+    normales = [a for a in perfil.columns if a not in excluidos]
+    for a in normales:
+        ax.plot(perfil.index, perfil[a], color=BASE, lw=1.4)
+    y_gris = float(perfil[normales].iloc[-1].mean())
+    y_rojos = [float(perfil[a].iloc[-1]) for a in excluidos if a in perfil]
+    if y_rojos and abs(y_gris - y_rojos[0]) < 3:  # separa etiquetas que chocarían
+        y_gris = y_rojos[0] + (3 if y_gris >= y_rojos[0] else -3)
+    ax.text(perfil.index[-1] + 0.3, y_gris, f"{normales[0]}–{normales[-1]}",
+            color=INK2, fontsize=9, va="center")
+    for a in excluidos:
+        if a in perfil:
+            ax.plot(perfil.index, perfil[a], color="#d03b3b", lw=2.4)
+            ax.text(perfil.index[-1] + 0.3, perfil[a].iloc[-1], f"{a} (publicado)", color="#d03b3b",
+                    fontsize=9.5, fontweight="bold", va="center")
+    ax.axhline(100, color=GRID, lw=1)
+    ax.set_xticks(range(0, 24, 2), [f"{h:02d}" for h in range(0, 24, 2)])
+    ax.set_xlim(0, 26.5)
+    ax.set_xlabel("Hora local")
+    ax.set_ylabel("Índice (100 = promedio del año)")
+    ax.grid(axis="y")
+    _titulo(ax, "Hallazgo: el perfil horario de 2025 en el archivo oficial no calza",
+            "Gris: 2018-2024, todos con la misma forma. Rojo: 2025 tal como viene publicado, desplazado ~9 horas.")
+    p_ok = perfil[normales].mean(axis=1)
+    corr = {int(a): round(float(np.corrcoef(perfil[a], p_ok)[0, 1]), 3) for a in perfil.columns}
+    return _guardar(fig, "11_calidad_perfil_2025.png"), {"correlacion_perfil_vs_2018_2024": corr}
+
+
 # ---------- Modelo ----------
 
 def _mape(r, p):
     r, p = np.asarray(r, float), np.asarray(p, float)
-    return float(np.mean(np.abs((r - p) / r)) * 100)
+    m = ~np.isnan(r) & ~np.isnan(p) & (r != 0)
+    return float(np.mean(np.abs((r[m] - p[m]) / r[m])) * 100)
 
 
 def fig_pronostico(test) -> str:
@@ -315,7 +351,8 @@ def _fmt(x, dec=1):
 
 
 def generar(demanda: pd.DataFrame, clima: pd.DataFrame | None, test: pd.DataFrame | None,
-            metricas: dict | None, paquete: dict | None, fuente: str) -> dict:
+            metricas: dict | None, paquete: dict | None, fuente: str,
+            completo: pd.DataFrame | None = None, excluidos: list[int] | None = None) -> dict:
     d = _local(demanda.dropna(subset=["demanda_mwh"]))
     figs, info = {}, {}
     figs["huella"] = fig_huella(d)
@@ -326,6 +363,9 @@ def generar(demanda: pd.DataFrame, clima: pd.DataFrame | None, test: pd.DataFram
     if f: figs["temperatura"] = f
     f, i = fig_covid(d); info.update(i)
     if f: figs["covid"] = f
+    f, i = fig_calidad(completo, excluidos or []); info.update(i)
+    if f: figs["calidad"] = f
+    info["anios_excluidos"] = list(excluidos or [])
     if test is not None and metricas:
         figs["metricas"] = fig_metricas(metricas)
         figs["pronostico"] = fig_pronostico(test)
@@ -360,6 +400,9 @@ def _kpis(info) -> str:
         ("Hora punta promedio", f"{info['hora_punta_promedio']:02d}:00 · valle {info['hora_valle_promedio']:02d}:00"),
         ("Fin de semana vs día hábil", f"{_fmt(info['finde_vs_habil_pct'])} %"),
     ]
+    if info.get("anios_excluidos"):
+        filas.append(("Años excluidos por calidad", ", ".join(map(str, info["anios_excluidos"]))
+                      + " (ver hallazgo)"))
     if "covid_peor_caida_pct" in info:
         filas.append(("Peor semana de 2020 (pandemia)", f"{_fmt(info['covid_peor_caida_pct'])} % vs 2018-2019"))
     if info.get("temp_min_consumo_c") is not None:
@@ -388,6 +431,12 @@ def _escribir_md(figs, info):
         ("error_hora", "Error por hora del día", ""),
         ("sesgo", "Sesgo del modelo por hora y mes", ""),
         ("importancia", "Qué variables importan", ""),
+        ("calidad", "Calidad de datos: el problema de 2025",
+         "Al comparar la forma diaria de cada año, la hoja 2025 del archivo oficial aparece desplazada "
+         "unas 9 horas: la punta cae de madrugada y el valle en la noche, algo incompatible con un "
+         "sistema con gran aporte solar. Por eso 2025 se excluye del entrenamiento y la evaluación "
+         "(`excluir_anios` en `config/settings.yaml`). Hay que volver a revisarlo cuando el "
+         "Coordinador publique una nueva versión del archivo."),
     ]
     partes = [f"# Resultados\n\n> Generado automáticamente por `python -m demanda.pipeline reporte`. "
               f"Fuente: {info['fuente']}.\n\n## Resumen\n\n{_kpis(info)}\n"]
@@ -407,7 +456,7 @@ def _actualizar_readme(figs, info):
     txt = readme.read_text(encoding="utf-8")
     if INI not in txt or FIN not in txt:
         return
-    imgs = [k for k in ("metricas", "huella", "hora_dia", "pronostico") if k in figs]
+    imgs = [k for k in ("metricas", "huella", "hora_dia", "pronostico", "calidad") if k in figs]
     cuerpo = (f"\n_Actualizado automáticamente. Fuente: {info['fuente']}._\n\n{_kpis(info)}\n\n"
               + "\n\n".join(f"![{k}](reports/{figs[k]})" for k in imgs)
               + "\n\n**[Ver el reporte completo con todos los gráficos →](reports/RESULTADOS.md)**\n")

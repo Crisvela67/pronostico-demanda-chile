@@ -24,6 +24,10 @@ cen_historico:
   # Cuando el Coordinador publique una versión nueva, actualiza esta URL.
   url: https://www.coordinador.cl/wp-content/uploads/2026/05/CEN-hist_gen_de_energia_por_hora_26.xlsx
   desde_anio: 2018          # SEN unificado desde nov-2017
+  # Años que se leen pero NO se usan para entrenar ni evaluar.
+  # 2025: en el archivo publicado (versión mayo 2026) el perfil horario viene desplazado
+  # ~9 horas respecto de 2018-2024 (punta de madrugada). Ver reports/RESULTADOS.md.
+  excluir_anios: [2025]
 
 xls:
   # Ajustar al formato real del archivo descargado
